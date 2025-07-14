@@ -1,0 +1,353 @@
+<!-- templates/parking_tracker/dashboard.html -->
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi du Stationnement - Rue Francis Le HELLEC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+</head>
+<body class="bg-base-200">
+<div class="container mx-auto p-6">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-primary mb-2">🅿️ Suivi du Stationnement - Rue Francis Le HELLEC</h1>
+        <p class="text-base-content/70">Dernière mise à jour: <span
+                class="font-semibold">{{ current_time|date:"d/m/Y H:i" }}</span></p>
+    </div>
+
+    <!-- Statistiques générales -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="stat bg-base-100 rounded-lg shadow">
+            <div class="stat-figure text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     class="inline-block w-8 h-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Véhicules Total</div>
+            <div class="stat-value text-primary">{{ vehicle_data|length }}</div>
+            <div class="stat-desc">Véhicules enregistrés</div>
+        </div>
+
+        <div class="stat bg-base-100 rounded-lg shadow">
+            <div class="stat-figure text-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     class="inline-block w-8 h-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Actuellement Stationnés</div>
+            <div class="stat-value text-secondary">{{ current_parks }}</div>
+            <div class="stat-desc">Véhicules présents</div>
+        </div>
+
+        <div class="stat bg-base-100 rounded-lg shadow">
+            <div class="stat-figure text-accent">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     class="inline-block w-8 h-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                </svg>
+            </div>
+            <div class="stat-title">Stationnements Total</div>
+            <div class="stat-value text-accent">{{ total_parks }}</div>
+            <div class="stat-desc">Toutes périodes confondues</div>
+        </div>
+    </div>
+
+    <!-- Options de filtrage -->
+    <div class="card bg-base-100 shadow-lg mb-8">
+        <div class="card-body">
+            <h3 class="card-title text-lg mb-4">🔍 Options de filtrage</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Filtre par statut -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-semibold">Filtrer par présence effective</span>
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="label cursor-pointer">
+                            <input type="checkbox" id="filterPresent" class="checkbox checkbox-sm mr-2"
+                                   onchange="applyFilters()">
+                            <span class="label-text">Véhicules présents</span>
+                        </label>
+                    </div>
+                </div>
+                <!-- Filtre par durée -->
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text font-semibold">Filtrer par durée de stationnement</span>
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="label cursor-pointer">
+                            <input type="radio" id="filter0days" class="radio radio-sm mr-2" name="radio_duration"
+                                   checked onchange=" applyFilters()">
+                            <span class="label-text">Toutes</span>
+                        </label>
+                        <label class="label cursor-pointer">
+                            <input type="radio" id="filter2days" class="radio radio-sm radio-info mr-2"
+                                   name="radio_duration" onchange=" applyFilters()">
+                            <span class="label-text">≥ 2 jours</span>
+                        </label>
+                        <label class="label cursor-pointer">
+                            <input type="radio" id="filter7days" class="radio radio-sm radio-warning mr-2"
+                                   name="radio_duration" onchange="applyFilters()">
+                            <span class="label-text">≥ 7 jours</span>
+                        </label>
+                        <label class="label cursor-pointer">
+                            <input type="radio" id="filter11days" class="radio radio-sm radio-error mr-2"
+                                   name="radio_duration" onchange="applyFilters()">
+                            <span class="label-text">≥ 11 jours</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bouton de reset -->
+            <div class="card-actions justify-end mt-4">
+                <button class="btn btn-ghost btn-sm" onclick="resetFilters()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                         class="inline-block w-4 h-4 stroke-current mr-1">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Réinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des véhicules -->
+    <div class="space-y-6" id="vehicleList">
+        {% for data in vehicle_data %}
+            <div class="card bg-base-100 shadow-lg vehicle-card" data-vehicle-id="{{ forloop.counter }}">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="card-title text-2xl">
+                            🚘 {{ data.vehicle.id }}
+                        </h2>
+                        <div class="badge badge-outline">
+                            {{ data.total_parks }} stationnement{{ data.total_parks|pluralize }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="text-sm text-base-content/70 mb-4">
+                            Véhicule enregistré le: {{ data.vehicle.created|date:"d/m/Y à H:i" }}
+                        </div>
+                        <div class="text-sm text-base-content/70 mb-4 md:text-right">
+                            {{ data.vehicle.finger_print }}
+                        </div>
+                    </div>
+
+                    <!-- Périodes de stationnement -->
+                    {% if data.parks %}
+                        <div class="overflow-x-auto">
+                            <table class="table table-zebra w-full">
+                                <thead>
+                                <tr>
+                                    <th>Arrivée</th>
+                                    <th>Départ</th>
+                                    <th>Durée (jours)</th>
+                                    <th>Durée ouvrée</th>
+                                    <th>Statut</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for park in data.parks %}
+                                    <tr class="hover {{ park.status_class }} parking-row"
+                                        data-is-present="{% if not park.departure %}true{% else %}false{% endif %}"
+                                        data-duration="{{ park.duration_days }}">
+                                        <td>
+                                            <div class="font-medium">{{ park.arrival|date:"d/m/Y" }}</div>
+                                            <div class="text-sm text-base-content/70">{{ park.arrival|date:"H:i" }}</div>
+                                        </td>
+                                        <td>
+                                            {% if park.departure %}
+                                                <div class="font-medium">{{ park.departure|date:"d/m/Y" }}</div>
+                                                <div class="text-sm text-base-content/70">{{ park.departure|date:"H:i" }}</div>
+                                            {% else %}
+                                                <span class="badge badge-success">En cours</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="font-medium">{{ park.duration_days }}
+                                                jour{{ park.duration_days|pluralize }}</div>
+                                            {% if park.duration_days >= 11 %}
+                                                <div class="badge badge-error badge-xs">Abusif</div>
+                                            {% elif park.duration_days >= 7 %}
+                                                <div class="badge badge-warning badge-xs">Long</div>
+                                            {% elif park.duration_days >= 2 %}
+                                                <div class="badge badge-primary badge-xs">Moyen</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="font-medium">{{ park.business_hours_duration }}</div>
+                                            <div class="text-xs text-base-content/70">9h00-18h00, L-S</div>
+                                        </td>
+                                        <td>
+                                            {% if not park.departure %}
+                                                <div class="badge badge-success gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         class="inline-block w-3 h-3 stroke-current">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                              stroke-width="2"
+                                                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    <strong>PRÉSENT</strong>
+                                                </div>
+                                            {% else %}
+                                                <div class="badge badge-ghost">
+                                                    Parti
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                 class="stroke-current shrink-0 w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Aucun stationnement enregistré pour ce véhicule</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="hero min-h-96 bg-base-200 rounded-lg">
+                <div class="hero-content text-center">
+                    <div class="max-w-md">
+                        <h1 class="text-5xl font-bold">🚗</h1>
+                        <h2 class="text-2xl font-bold py-6">Aucun véhicule</h2>
+                        <p class="py-6">Aucun véhicule n'a encore été enregistré. Lancez le traitement des photos pour
+                            commencer le suivi.</p>
+                        <div class="mockup-code">
+                            <pre><code>python manage.py process_photos --input-dir /path/to/photos --output-dir /path/to/output --api-key 25f5de2b35f6386a8a8aae101b51ab63797d77da</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Légende -->
+    <div class="mt-8 p-4 bg-base-100 rounded-lg shadow">
+        <h3 class="font-bold text-lg mb-3">📝 Légende</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-blue-100 rounded border"></div>
+                <span>Stationnement de 3-6 jours</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-yellow-100 rounded border"></div>
+                <span>Stationnement de 7-10 jours</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-red-100 rounded border"></div>
+                <span>Stationnement de 11+ jours</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="badge badge-success badge-xs"></div>
+                <span>Véhicule actuellement présent</span>
+            </div>
+        </div>
+        <div class="mt-3 text-xs text-base-content/70">
+            <p><strong>Durée ouvrée:</strong> Calculée uniquement sur les créneaux 9h00-18h00, du lundi au samedi</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function applyFilters() {
+        const filterPresent = document.getElementById('filterPresent').checked;
+        const filter2days = document.getElementById('filter2days').checked;
+        const filter7days = document.getElementById('filter7days').checked;
+        const filter11days = document.getElementById('filter11days').checked;
+
+        const vehicleCards = document.querySelectorAll('.vehicle-card');
+
+        vehicleCards.forEach(card => {
+            const parkingRows = card.querySelectorAll('.parking-row');
+            let hasVisibleRows = false;
+
+            // Si aucun filtre de durée n'est actif, on montre toutes les lignes
+            const anyDurationFilter = filter2days || filter7days || filter11days;
+
+            parkingRows.forEach(row => {
+                const isPresent = row.dataset.isPresent === 'true';
+                const duration = parseInt(row.dataset.duration);
+
+                let showRow = true;
+
+                // Filtre par présence
+                if (filterPresent && !isPresent) {
+                    showRow = false;
+                }
+
+                // Filtre par durée (si au moins un filtre de durée est actif)
+                if (anyDurationFilter) {
+                    let meetsDurationCriteria = false;
+
+                    if (filter2days && duration >= 2) meetsDurationCriteria = true;
+                    if (filter7days && duration >= 7) meetsDurationCriteria = true;
+                    if (filter11days && duration >= 11) meetsDurationCriteria = true;
+
+                    if (!meetsDurationCriteria) {
+                        showRow = false;
+                    }
+                }
+
+                hasVisibleRows = hasVisibleRows || showRow;
+
+            });
+
+            // Afficher ou masquer la carte entière selon s'il y a des lignes visibles
+            if (hasVisibleRows || parkingRows.length === 0) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('filterPresent').checked = false;
+        document.getElementById('filter0days').checked = true;
+        document.getElementById('filter2days').checked = false;
+        document.getElementById('filter7days').checked = false;
+        document.getElementById('filter11days').checked = false;
+
+        // Réafficher tous les éléments
+        const vehicleCards = document.querySelectorAll('.vehicle-card');
+        const parkingRows = document.querySelectorAll('.parking-row');
+
+        vehicleCards.forEach(card => {
+            card.style.display = '';
+        });
+
+        parkingRows.forEach(row => {
+            row.style.display = '';
+        });
+    }
+</script>
+</body>
+</html>
