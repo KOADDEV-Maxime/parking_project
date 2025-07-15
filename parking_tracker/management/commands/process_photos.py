@@ -52,9 +52,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Aucune photo à traiter'))
             return
 
-        # Créer un nouveau batch
-        batch = Batch.objects.create()
-        self.stdout.write(self.style.SUCCESS(f'Nouveau batch créé: {batch.id}'))
+        # Initialise le lot à blanc
+        batch = None
 
         # Traiter chaque photo
         processed_vehicles = set()
@@ -68,7 +67,12 @@ class Command(BaseCommand):
                 # Reconnaître la plaque d'immatriculation
                 results = self.recognize_plate(photo_path, api_key)
 
-                if results:
+                if results and results['plate']:
+                    # Crée un nouveau Batch
+                    if batch is None:
+                        batch = Batch.objects.create()
+                        self.stdout.write(self.style.SUCCESS(f'Nouveau batch créé: {batch.id}'))
+
                     plate_number = self.format_plate(results['plate'])
                     finger_print = RGPD.generate_fingerprint(plate_number, public_key_pem)
 
@@ -76,6 +80,7 @@ class Command(BaseCommand):
                     vehicle, created = Vehicle.objects.get_or_create(finger_print=finger_print)
 
                     if created:
+                        # Enregistre une version chiffrée de la plaque d'immatriculation
                         vehicle.encoded_plate = RGPD.encrypt_text(plate_number, public_key_pem)
                         vehicle.save()
                         self.stdout.write(f'Nouveau véhicule: {plate_number}')
@@ -102,7 +107,8 @@ class Command(BaseCommand):
                 quit()
 
         # Mettre à jour les stationnements
-        self.update_parking_records(batch, processed_vehicles)
+        if batch:
+            self.update_parking_records(batch, processed_vehicles)
 
         self.stdout.write(self.style.SUCCESS(f'Traitement terminé. {len(processed_vehicles)} véhicules traités.'))
 
@@ -265,7 +271,7 @@ class Command(BaseCommand):
             img_base64 = self.image_to_base64(resized_img)
 
             response = requests.post(
-                'https://api.platerecognizer.com/v1/plate-reader/',
+                settings.PLATE_RECOGNIZER_URL,
                 data={'upload': img_base64},
                 headers={'Authorization': f'Token {api_key}'}
             )

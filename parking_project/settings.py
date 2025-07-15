@@ -129,6 +129,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Plate Recognizer
+PLATE_RECOGNIZER_URL = 'https://api.platerecognizer.com/v1/plate-reader/'
+
+# Security files
 SECURITY_URL = '/security'
 SECURITY_ROOT = BASE_DIR / 'security'
 SECURITY_PUBLIC_KEY_URL = SECURITY_ROOT / 'public_key.pem'
