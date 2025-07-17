@@ -1,3 +1,4 @@
+import getpass
 from django.core.management.base import BaseCommand
 from ...models import Vehicle
 from ...utils.rgpd import RGPD
@@ -7,11 +8,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--private_key', type=str, required=True, help='Path to private key file')
-        parser.add_argument('--password', type=str, required=True, help='Secret private key password')
 
     def handle(self, *args, **options):
         private_key = options['private_key']
-        password = options['password']
+        password = getpass.getpass(prompt='Mot de passe pour votre clé privée :').strip()
 
         try:
             private_key_pem = RGPD.load_private_key_from_file(private_key, password)

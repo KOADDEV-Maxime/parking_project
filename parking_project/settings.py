@@ -130,7 +130,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Plate Recognizer
-PLATE_RECOGNIZER_URL = 'https://api.platerecognizer.com/v1/plate-reader/'
+# Use the URL below for Snapshot Cloud
+# PLATE_RECOGNIZER_URL = 'https://api.platerecognizer.com/v1/plate-reader/'
+
+# Use the URL below for Snapshot SDK. See https://guides.platerecognizer.com/docs/snapshot/getting-started/ for setup
+PLATE_RECOGNIZER_URL = 'http://localhost:8080/v1/plate-reader/'
 
 # Security files
 SECURITY_URL = '/security'
